@@ -1,30 +1,8 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { useQuery } from "react-query";
-
-interface IType {
-    name: string;
-    color: string;
-}
-
-interface IStats {
-    name: string;
-    value: number;
-}
-
-interface IPokemon {
-    id: number;
-    name: string;
-    image: string;
-    largeImage?: string;
-    description?: string;
-    weight: number;
-    height: number;
-    type: IType[];
-    stats: IStats[];
-    weakness?: IType[];
-    strongness?: IType[];
-}
+import { IPokemon } from "../interfaces/Interfaces";
+import { useToast } from "@chakra-ui/react";
 
 const fetchPokemon = async (id: number | string) => {
     return await axios.get(`https://pokeapi.co/api/v2/pokemon/${id}`);
@@ -52,11 +30,26 @@ const fetchFightIndices = async (url: string) => {
 };
 
 const useGetPokemonData = (choose: string) => {
+    const toast = useToast();
     const [description, setDescription] = useState<string>("");
     const [pokeId, setPokeId] = useState<number | string>(choose);
-    const { data, isLoading, error } = useQuery(`getPokemon${pokeId}`, () => {
-        return fetchPokemon(pokeId);
-    });
+    const { data, isLoading, isError } = useQuery(
+        `getPokemon${pokeId}`,
+        () => {
+            return fetchPokemon(pokeId);
+        },
+        {
+            onError: () => {
+                toast({
+                    title: "Pokemon not found.",
+                    description: "Please try with another Pokémon.",
+                    status: "error",
+                    position: "top",
+                    isClosable: true,
+                });
+            },
+        }
+    );
 
     useEffect(() => {
         !isNaN(Number(choose))
@@ -131,7 +124,7 @@ const useGetPokemonData = (choose: string) => {
         })),
     };
     // data?.data?.species?.url && fetchDescription(data?.data?.species?.url);
-    return { pokemon, isLoading, error };
+    return { pokemon, isLoading, isError };
 };
 
 export default useGetPokemonData;
